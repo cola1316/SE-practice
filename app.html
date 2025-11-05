@@ -394,7 +394,8 @@
                 2: { maxNumber: [20, 50, 100], operations: ['+', '-', '×'] },
                 3: { maxNumber: [50, 100], operations: ['+', '-', '×', '÷'] }
             },
-            defaultCount: 30
+            defaultCount: 30,
+            maxAllowedCount: 30 // 添加最大允许题目数量
         };
 
         // 计时器模块
@@ -614,9 +615,16 @@
             // 获取用户设置
             getUserSettings() {
                 const grade = parseInt(this.elements.gradeSelect.value);
-                const count = parseInt(this.elements.countInput.value);
+                let count = parseInt(this.elements.countInput.value);
                 const maxNumber = parseInt(this.elements.maxNumberSelect.value);
                 const enableTimer = this.elements.timerCheckbox.checked;
+
+                // 添加题目数量限制逻辑
+                if (count > Config.maxAllowedCount) {
+                    count = Config.maxAllowedCount;
+                    this.elements.countInput.value = count; // 更新输入框显示
+                    this.showLimitMessage(); // 显示提示信息
+                }
 
                 const operations = [];
                 if (this.elements.additionCheckbox.checked) operations.push('+');
@@ -630,6 +638,33 @@
                 }
 
                 return { grade, count, maxNumber, operations, enableTimer };
+            }
+
+            // 显示数量限制提示
+            showLimitMessage() {
+                // 创建提示元素
+                let message = document.getElementById('countLimitMessage');
+                if (!message) {
+                    message = document.createElement('div');
+                    message.id = 'countLimitMessage';
+                    message.style.cssText = `
+                        background: #fff3cd;
+                        border: 1px solid #ffeaa7;
+                        border-radius: 5px;
+                        padding: 10px;
+                        margin-top: 5px;
+                        color: #856404;
+                        font-size: 14px;
+                    `;
+                    this.elements.countInput.parentNode.appendChild(message);
+                }
+                
+                message.textContent = `题目数量已自动调整为${Config.maxAllowedCount}题`;
+                
+                // 3秒后自动隐藏提示
+                setTimeout(() => {
+                    message.style.display = 'none';
+                }, 3000);
             }
 
             // 显示题目
