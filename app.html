@@ -1,0 +1,809 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>小学生口算题生成器 - 答题批改版</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
+        }
+
+        body {
+            background-color: #f5f7fa;
+            color: #333;
+            line-height: 1.6;
+            padding: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+            color: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            font-size: 2.2rem;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .control-panel {
+            flex: 1;
+            min-width: 300px;
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        }
+
+        .preview-panel {
+            flex: 2;
+            min-width: 300px;
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #444;
+        }
+
+        select,
+        input[type="number"] {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+
+        .checkbox-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-top: 10px;
+        }
+
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+        }
+
+        .checkbox-item input {
+            margin-right: 8px;
+        }
+
+        button {
+            background: #4a6ee0;
+            color: white;
+            border: none;
+            padding: 14px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: background 0.3s;
+            width: 100%;
+            margin-top: 10px;
+        }
+
+        button:hover {
+            background: #3a5ec0;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .button-group button {
+            flex: 1;
+        }
+
+        #generateBtn {
+            background: #4CAF50;
+        }
+
+        #generateBtn:hover {
+            background: #3d8b40;
+        }
+
+        #printBtn {
+            background: #2196F3;
+        }
+
+        #printBtn:hover {
+            background: #0b7dda;
+        }
+
+        #checkBtn {
+            background: #FF9800;
+        }
+
+        #checkBtn:hover {
+            background: #e68900;
+        }
+
+        .problems-container {
+            flex: 1;
+            padding: 20px;
+            border: 1px dashed #ccc;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            min-height: 400px;
+        }
+
+        .problem-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 15px;
+        }
+
+        .problem-item {
+            padding: 10px;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .problem-text {
+            white-space: nowrap;
+            margin-right: 8px;
+        }
+
+        .answer-input {
+            width: 50px; /* 减小输入框宽度 */
+            padding: 5px 6px; /* 调整内边距 */
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+            text-align: center;
+            /* 移除数字输入框的上下箭头 */
+            -moz-appearance: textfield;
+        }
+
+        /* 针对Webkit浏览器移除上下箭头 */
+        .answer-input::-webkit-outer-spin-button,
+        .answer-input::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+
+        .correct {
+            color: #4CAF50;
+            font-weight: bold;
+        }
+
+        .incorrect {
+            color: #F44336;
+            font-weight: bold;
+        }
+
+        .score-display {
+            text-align: center;
+            font-size: 20px;
+            font-weight: bold;
+            margin: 15px 0;
+            padding: 10px;
+            background-color: #f0f8ff;
+            border-radius: 5px;
+        }
+        
+        .timer-display {
+            text-align: center;
+            font-size: 20px;
+            font-weight: bold;
+            margin: 15px 0;
+            padding: 10px;
+            background-color: #fff3e0;
+            border-radius: 5px;
+            color: #f57c00;
+            display: none;
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 30px;
+            padding: 20px;
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+
+            .preview-panel,
+            .preview-panel * {
+                visibility: visible;
+            }
+
+            .preview-panel {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                box-shadow: none;
+            }
+
+            button {
+                display: none;
+            }
+            
+            .answer-input {
+                border: none;
+                border-bottom: 1px solid #ccc;
+            }
+            
+            .timer-display {
+                display: none !important;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                flex-direction: column;
+            }
+
+            .problem-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .problem-item {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            
+            .answer-input {
+                width: 60px;
+                margin-top: 5px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <h1>小学生口算题生成器</h1>
+        <p class="subtitle">专为1-3年级小学生设计，支持在线答题与自动批改</p>
+    </header>
+
+    <div class="container">
+        <div class="control-panel">
+            <div class="form-group">
+                <label for="grade">选择年级</label>
+                <select id="grade">
+                    <option value="1">一年级</option>
+                    <option value="2">二年级</option>
+                    <option value="3">三年级</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="count">题目数量</label>
+                <input type="number" id="count" min="5" max="100" value="30">
+            </div>
+
+            <div class="form-group">
+                <label>运算类型</label>
+                <div class="checkbox-group">
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="addition" checked>
+                        <label for="addition">加法</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="subtraction" checked>
+                        <label for="subtraction">减法</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="multiplication">
+                        <label for="multiplication">乘法</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="division">
+                        <label for="division">除法</label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="maxNumber">最大数值范围</label>
+                <select id="maxNumber">
+                    <option value="10">10以内</option>
+                    <option value="20" selected>20以内</option>
+                    <option value="50">50以内</option>
+                    <option value="100">100以内</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <div class="checkbox-item">
+                    <input type="checkbox" id="timerCheckbox">
+                    <label for="timerCheckbox">计时</label>
+                </div>
+            </div>
+
+            <button id="generateBtn">生成口算题</button>
+
+            <div class="button-group">
+                <button id="checkBtn">批改题目</button>
+                <button id="printBtn">打印题目</button>
+            </div>
+            
+            <div class="timer-display" id="timerDisplay">
+                用时: <span id="timerValue">00:00</span>
+            </div>
+            
+            <div class="score-display" id="scoreDisplay" style="display: none;">
+                得分: <span id="score">0</span> / <span id="total">0</span>
+            </div>
+        </div>
+
+        <div class="preview-panel">
+            <h2>口算题练习</h2>
+            <div class="problems-container">
+                <div class="problem-grid" id="problemsGrid">
+                    <p>请点击"生成口算题"按钮开始练习</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <p>© 2023 小学生口算题生成器 | 专为家长设计的便捷工具</p>
+    </footer>
+
+    <script type="module">
+        // 配置模块
+        const Config = {
+            gradeOptions: {
+                1: { maxNumber: [10, 20], operations: ['+', '-'] },
+                2: { maxNumber: [20, 50, 100], operations: ['+', '-', '×'] },
+                3: { maxNumber: [50, 100], operations: ['+', '-', '×', '÷'] }
+            },
+            defaultCount: 30
+        };
+
+        // 计时器模块
+        class Timer {
+            constructor() {
+                this.startTime = 0;
+                this.endTime = 0;
+                this.isRunning = false;
+                this.intervalId = null;
+                this.timerDisplay = document.getElementById('timerValue');
+                this.timerContainer = document.getElementById('timerDisplay');
+            }
+            
+            // 开始计时
+            start() {
+                if (this.isRunning) return;
+                
+                this.startTime = Date.now();
+                this.isRunning = true;
+                this.timerContainer.style.display = 'block';
+                
+                this.intervalId = setInterval(() => {
+                    this.updateDisplay();
+                }, 1000);
+            }
+            
+            // 停止计时
+            stop() {
+                if (!this.isRunning) return;
+                
+                this.isRunning = false;
+                this.endTime = Date.now();
+                clearInterval(this.intervalId);
+            }
+            
+            // 重置计时器
+            reset() {
+                this.stop();
+                this.startTime = 0;
+                this.endTime = 0;
+                this.timerDisplay.textContent = '00:00';
+                this.timerContainer.style.display = 'none';
+            }
+            
+            // 更新显示
+            updateDisplay() {
+                const elapsed = Math.floor((Date.now() - this.startTime) / 1000);
+                const minutes = Math.floor(elapsed / 60).toString().padStart(2, '0');
+                const seconds = (elapsed % 60).toString().padStart(2, '0');
+                this.timerDisplay.textContent = `${minutes}:${seconds}`;
+            }
+            
+            // 获取用时（秒）
+            getElapsedTime() {
+                if (this.isRunning) {
+                    return Math.floor((Date.now() - this.startTime) / 1000);
+                } else if (this.endTime > 0) {
+                    return Math.floor((this.endTime - this.startTime) / 1000);
+                }
+                return 0;
+            }
+        }
+
+        // 题目生成器模块
+        class ProblemGenerator {
+            constructor(config) {
+                this.config = config;
+            }
+
+            // 生成单个题目
+            generateProblem(grade, maxNumber, operation) {
+                let num1, num2, problem, answer;
+
+                switch (operation) {
+                    case '+':
+                        num1 = Math.floor(Math.random() * (maxNumber - 1)) + 1;
+                        num2 = Math.floor(Math.random() * (maxNumber - num1)) + 1;
+                        problem = `${num1} + ${num2} = `;
+                        answer = num1 + num2;
+                        break;
+                    case '-':
+                        num1 = Math.floor(Math.random() * (maxNumber - 1)) + 2;
+                        num2 = Math.floor(Math.random() * (num1 - 1)) + 1;
+                        problem = `${num1} - ${num2} = `;
+                        answer = num1 - num2;
+                        break;
+                    case '×':
+                        const multiplierMax = grade === 2 ? 9 : maxNumber;
+                        num1 = Math.floor(Math.random() * multiplierMax) + 1;
+                        num2 = Math.floor(Math.random() * multiplierMax) + 1;
+                        problem = `${num1} × ${num2} = `;
+                        answer = num1 * num2;
+                        break;
+                    case '÷':
+                        num2 = Math.floor(Math.random() * 9) + 1;
+                        num1 = num2 * (Math.floor(Math.random() * 9) + 1);
+                        while (num1 > maxNumber) {
+                            num2 = Math.floor(Math.random() * 9) + 1;
+                            num1 = num2 * (Math.floor(Math.random() * 9) + 1);
+                        }
+                        problem = `${num1} ÷ ${num2} = `;
+                        answer = num1 / num2;
+                        break;
+                }
+
+                return { problem, answer };
+            }
+
+            // 生成题目集
+            generateProblemSet(grade, count, maxNumber, operations) {
+                const problems = [];
+                const answers = [];
+
+                for (let i = 0; i < count; i++) {
+                    const operation = operations[Math.floor(Math.random() * operations.length)];
+                    const { problem, answer } = this.generateProblem(grade, maxNumber, operation);
+
+                    problems.push({
+                        index: i + 1,
+                        text: problem,
+                        answer: answer
+                    });
+
+                    answers.push({
+                        index: i + 1,
+                        text: problem,
+                        answer: answer
+                    });
+                }
+
+                return { problems, answers };
+            }
+        }
+
+        // UI控制器模块
+        class UIController {
+            constructor() {
+                this.elements = {
+                    gradeSelect: document.getElementById('grade'),
+                    countInput: document.getElementById('count'),
+                    maxNumberSelect: document.getElementById('maxNumber'),
+                    generateBtn: document.getElementById('generateBtn'),
+                    printBtn: document.getElementById('printBtn'),
+                    checkBtn: document.getElementById('checkBtn'),
+                    problemsGrid: document.getElementById('problemsGrid'),
+                    scoreDisplay: document.getElementById('scoreDisplay'),
+                    score: document.getElementById('score'),
+                    total: document.getElementById('total'),
+                    additionCheckbox: document.getElementById('addition'),
+                    subtractionCheckbox: document.getElementById('subtraction'),
+                    multiplicationCheckbox: document.getElementById('multiplication'),
+                    divisionCheckbox: document.getElementById('division'),
+                    timerCheckbox: document.getElementById('timerCheckbox')
+                };
+                
+                this.currentProblems = [];
+                this.timer = new Timer();
+            }
+
+            // 初始化UI
+            initializeUI(config) {
+                this.setupEventListeners(config);
+                this.updateMaxNumberOptions(1, config);
+            }
+
+            // 设置事件监听器
+            setupEventListeners(config) {
+                // 年级变化事件
+                this.elements.gradeSelect.addEventListener('change', (e) => {
+                    const grade = parseInt(e.target.value);
+                    this.updateMaxNumberOptions(grade, config);
+                    this.updateOperationOptions(grade);
+                });
+
+                // 生成题目事件
+                this.elements.generateBtn.addEventListener('click', () => {
+                    this.onGenerateProblems();
+                });
+
+                // 打印事件
+                this.elements.printBtn.addEventListener('click', () => {
+                    this.onPrint();
+                });
+
+                // 批改事件
+                this.elements.checkBtn.addEventListener('click', () => {
+                    this.onCheckAnswers();
+                });
+            }
+
+            // 更新最大数值范围选项
+            updateMaxNumberOptions(grade, config) {
+                const maxNumberOptions = config.gradeOptions[grade].maxNumber;
+                this.elements.maxNumberSelect.innerHTML = '';
+
+                maxNumberOptions.forEach(value => {
+                    const option = document.createElement('option');
+                    option.value = value;
+                    option.textContent = `${value}以内`;
+                    if (value === 20 || (grade === 2 && value === 50) || (grade === 3 && value === 100)) {
+                        option.selected = true;
+                    }
+                    this.elements.maxNumberSelect.appendChild(option);
+                });
+            }
+
+            // 更新运算类型选项
+            updateOperationOptions(grade) {
+                const operations = Config.gradeOptions[grade].operations;
+
+                this.elements.additionCheckbox.checked = operations.includes('+');
+                this.elements.subtractionCheckbox.checked = operations.includes('-');
+                this.elements.multiplicationCheckbox.checked = operations.includes('×');
+                this.elements.divisionCheckbox.checked = operations.includes('÷');
+            }
+
+            // 获取用户设置
+            getUserSettings() {
+                const grade = parseInt(this.elements.gradeSelect.value);
+                const count = parseInt(this.elements.countInput.value);
+                const maxNumber = parseInt(this.elements.maxNumberSelect.value);
+                const enableTimer = this.elements.timerCheckbox.checked;
+
+                const operations = [];
+                if (this.elements.additionCheckbox.checked) operations.push('+');
+                if (this.elements.subtractionCheckbox.checked) operations.push('-');
+                if (this.elements.multiplicationCheckbox.checked) operations.push('×');
+                if (this.elements.divisionCheckbox.checked) operations.push('÷');
+
+                // 如果没有选择任何运算类型，使用默认值
+                if (operations.length === 0) {
+                    operations.push('+', '-');
+                }
+
+                return { grade, count, maxNumber, operations, enableTimer };
+            }
+
+            // 显示题目
+            displayProblems(problems) {
+                this.currentProblems = problems;
+                this.elements.problemsGrid.innerHTML = '';
+                this.elements.scoreDisplay.style.display = 'none';
+
+                problems.forEach(problem => {
+                    const problemElement = document.createElement('div');
+                    problemElement.className = 'problem-item';
+                    problemElement.innerHTML = `
+                        <span class="problem-text">${problem.index}. ${problem.text}</span>
+                        <input type="number" class="answer-input" data-index="${problem.index}" data-answer="${problem.answer}">
+                    `;
+                    this.elements.problemsGrid.appendChild(problemElement);
+                });
+
+                // 禁用输入框的鼠标滚轮控制
+                this.disableInputWheel();
+            }
+
+            // 禁用输入框的鼠标滚轮控制
+            disableInputWheel() {
+                const inputs = document.querySelectorAll('.answer-input');
+                inputs.forEach(input => {
+                    input.addEventListener('wheel', (e) => {
+                        e.preventDefault();
+                    });
+                });
+            }
+
+            // 批改题目
+            checkAnswers() {
+                const inputs = document.querySelectorAll('.answer-input');
+                let correctCount = 0;
+                let totalCount = this.currentProblems.length;
+
+                inputs.forEach(input => {
+                    const userAnswer = parseInt(input.value);
+                    const correctAnswer = parseInt(input.dataset.answer);
+                    const problemElement = input.parentElement;
+                    
+                    // 移除之前的样式
+                    problemElement.classList.remove('correct', 'incorrect');
+                    
+                    if (isNaN(userAnswer)) {
+                        // 未填写答案
+                        problemElement.classList.add('incorrect');
+                        problemElement.innerHTML = `
+                            <span class="problem-text">${input.dataset.index}. ${this.currentProblems[input.dataset.index-1].text}</span>
+                            <span class="incorrect">正确答案: ${correctAnswer}</span>
+                        `;
+                    } else if (userAnswer === correctAnswer) {
+                        // 答案正确
+                        correctCount++;
+                        problemElement.classList.add('correct');
+                        problemElement.innerHTML = `
+                            <span class="problem-text">${input.dataset.index}. ${this.currentProblems[input.dataset.index-1].text}</span>
+                            <span class="correct">${userAnswer} ✓</span>
+                        `;
+                    } else {
+                        // 答案错误
+                        problemElement.classList.add('incorrect');
+                        problemElement.innerHTML = `
+                            <span class="problem-text">${input.dataset.index}. ${this.currentProblems[input.dataset.index-1].text}</span>
+                            <span class="incorrect">${userAnswer} ✗ 正确答案: ${correctAnswer}</span>
+                        `;
+                    }
+                });
+
+                // 显示分数
+                this.elements.score.textContent = correctCount;
+                this.elements.total.textContent = totalCount;
+                this.elements.scoreDisplay.style.display = 'block';
+                
+                return { correct: correctCount, total: totalCount };
+            }
+
+            // 生成题目回调
+            onGenerateProblems() {
+                const settings = this.getUserSettings();
+                const event = new CustomEvent('generateProblems', { detail: settings });
+                document.dispatchEvent(event);
+            }
+
+            // 打印回调
+            onPrint() {
+                window.print();
+            }
+
+            // 批改回调
+            onCheckAnswers() {
+                const event = new CustomEvent('checkAnswers');
+                document.dispatchEvent(event);
+            }
+            
+            // 开始计时
+            startTimer() {
+                this.timer.start();
+            }
+            
+            // 停止计时
+            stopTimer() {
+                this.timer.stop();
+            }
+            
+            // 重置计时器
+            resetTimer() {
+                this.timer.reset();
+            }
+        }
+
+        // 主应用模块
+        class MathProblemApp {
+            constructor() {
+                this.config = Config;
+                this.problemGenerator = new ProblemGenerator(this.config);
+                this.uiController = new UIController();
+
+                this.initializeApp();
+            }
+
+            // 初始化应用
+            initializeApp() {
+                this.uiController.initializeUI(this.config);
+
+                // 监听生成题目事件
+                document.addEventListener('generateProblems', (e) => {
+                    this.handleGenerateProblems(e.detail);
+                });
+
+                // 监听批改题目事件
+                document.addEventListener('checkAnswers', () => {
+                    this.handleCheckAnswers();
+                });
+
+                // 初始生成一组题目
+                const initialSettings = this.uiController.getUserSettings();
+                this.handleGenerateProblems(initialSettings);
+            }
+
+            // 处理生成题目
+            handleGenerateProblems(settings) {
+                // 重置计时器
+                this.uiController.resetTimer();
+                
+                const { problems, answers } = this.problemGenerator.generateProblemSet(
+                    settings.grade,
+                    settings.count,
+                    settings.maxNumber,
+                    settings.operations
+                );
+
+                this.uiController.displayProblems(problems);
+                
+                // 如果启用了计时功能，开始计时
+                if (settings.enableTimer) {
+                    this.uiController.startTimer();
+                }
+            }
+
+            // 处理批改题目
+            handleCheckAnswers() {
+                this.uiController.checkAnswers();
+                // 停止计时
+                this.uiController.stopTimer();
+            }
+        }
+
+        // 启动应用
+        document.addEventListener('DOMContentLoaded', () => {
+            new MathProblemApp();
+        });
+    </script>
+</body>
+</html>

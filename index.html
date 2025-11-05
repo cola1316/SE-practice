@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>小学生口算题生成器 - 专为1-3年级设计</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            color: #333;
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* 头部样式 */
+        header {
+            text-align: center;
+            padding: 60px 20px;
+            background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+            color: white;
+            border-radius: 15px;
+            margin-bottom: 40px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .logo {
+            font-size: 3.5rem;
+            margin-bottom: 15px;
+        }
+
+        h1 {
+            font-size: 2.8rem;
+            margin-bottom: 15px;
+            font-weight: 700;
+        }
+
+        .subtitle {
+            font-size: 1.3rem;
+            opacity: 0.9;
+            margin-bottom: 25px;
+        }
+
+        .cta-button {
+            display: inline-block;
+            background: #4CAF50;
+            color: white;
+            padding: 15px 40px;
+            font-size: 1.2rem;
+            font-weight: 600;
+            text-decoration: none;
+            border-radius: 50px;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(76, 175, 80, 0.3);
+        }
+
+        .cta-button:hover {
+            background: #3d8b40;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(76, 175, 80, 0.4);
+        }
+
+        /* 功能特色区域 */
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            margin: 50px 0;
+        }
+
+        .feature-card {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.08);
+            transition: transform 0.3s ease;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .feature-icon {
+            font-size: 3rem;
+            margin-bottom: 20px;
+            color: #2575fc;
+        }
+
+        .feature-card h3 {
+            font-size: 1.4rem;
+            margin-bottom: 15px;
+            color: #2c3e50;
+        }
+
+        /* 演示区域 */
+        .demo-section {
+            background: white;
+            border-radius: 15px;
+            padding: 40px;
+            margin: 50px 0;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.08);
+        }
+
+        .demo-section h2 {
+            text-align: center;
+            margin-bottom: 30px;
+            color: #2c3e50;
+            font-size: 2.2rem;
+        }
+
+        .demo-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            align-items: center;
+        }
+
+        .demo-text {
+            font-size: 1.1rem;
+        }
+
+        .demo-image {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            border: 2px dashed #ddd;
+        }
+
+        .demo-image img {
+            max-width: 100%;
+            border-radius: 8px;
+        }
+
+        /* 使用指南 */
+        .guide-steps {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 25px;
+            margin: 40px 0;
+        }
+
+        .step {
+            text-align: center;
+            padding: 25px;
+        }
+
+        .step-number {
+            display: inline-block;
+            width: 50px;
+            height: 50px;
+            background: #2575fc;
+            color: white;
+            border-radius: 50%;
+            line-height: 50px;
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin-bottom: 15px;
+        }
+
+        /* 技术特点 */
+        .tech-stack {
+            background: #2c3e50;
+            color: white;
+            padding: 50px 30px;
+            border-radius: 15px;
+            text-align: center;
+            margin: 50px 0;
+        }
+
+        .tech-stack h2 {
+            margin-bottom: 30px;
+            font-size: 2.2rem;
+        }
+
+        .tech-icons {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 30px;
+            font-size: 3rem;
+        }
+
+        /* 页脚 */
+        footer {
+            text-align: center;
+            padding: 40px 20px;
+            margin-top: 50px;
+            border-top: 1px solid #eee;
+            color: #666;
+        }
+
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            .demo-content {
+                grid-template-columns: 1fr;
+            }
+            
+            .tech-icons {
+                font-size: 2rem;
+            }
+            
+            h1 {
+                font-size: 2rem;
+            }
+            
+            .logo {
+                font-size: 2.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- 头部横幅 -->
+        <header>
+            <div class="logo">🧮</div>
+            <h1>小学生口算题生成器</h1>
+            <p class="subtitle">专为1-3年级小学生设计的智能口算练习工具</p>
+            <a href="app.html" class="cta-button">立即体验 →</a>
+        </header>
+
+        <!-- 功能特色 -->
+        <section class="features">
+            <div class="feature-card">
+                <div class="feature-icon">🎯</div>
+                <h3>年级适配</h3>
+                <p>针对1-3年级不同难度，智能生成适合的题目</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">⚡</div>
+                <h3>即时批改</h3>
+                <p>自动批改功能，实时反馈学习成果</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">📱</div>
+                <h3>响应式设计</h3>
+                <p>支持电脑、平板、手机等多种设备</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🖨️</div>
+                <h3>一键打印</h3>
+                <p>生成纸质练习题，保护孩子视力</p>
+            </div>
+        </section>
+
+        <!-- 演示区域 -->
+        <section class="demo-section">
+            <h2>界面预览</h2>
+            <div class="demo-content">
+                <div class="demo-text">
+                    <p>简洁直观的操作界面，让孩子专注于数学练习：</p>
+                    <ul style="margin-top: 20px; line-height: 2;">
+                        <li>✅ 自由选择题目数量和难度</li>
+                        <li>✅ 支持加减乘除四种运算</li>
+                        <li>✅ 实时计时功能，提升效率</li>
+                        <li>✅ 详细的成绩统计和分析</li>
+                        <li>✅ 完全离线使用，保护隐私</li>
+                    </ul>
+                </div>
+                <div class="demo-image">
+                    <div style="background: #f0f8ff; padding: 30px; border-radius: 8px;">
+                        <div style="background: white; padding: 20px; border-radius: 5px; margin-bottom: 10px;">
+                            <strong>15 + 7 = </strong><span style="border-bottom: 1px solid #ccc; display: inline-block; width: 40px; margin-left: 10px;"></span>
+                        </div>
+                        <div style="background: white; padding: 20px; border-radius: 5px; margin-bottom: 10px;">
+                            <strong>23 - 9 = </strong><span style="border-bottom: 1px solid #ccc; display: inline-block; width: 40px; margin-left: 10px;"></span>
+                        </div>
+                        <div style="background: white; padding: 20px; border-radius: 5px;">
+                            <strong>6 × 8 = </strong><span style="border-bottom: 1px solid #ccc; display: inline-block; width: 40px; margin-left: 10px;"></span>
+                        </div>
+                    </div>
+                    <p style="margin-top: 10px; color: #666;">简洁的答题界面</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- 使用指南 -->
+        <section class="demo-section">
+            <h2>简单四步，开始练习</h2>
+            <div class="guide-steps">
+                <div class="step">
+                    <div class="step-number">1</div>
+                    <h3>选择年级</h3>
+                    <p>根据学生年级选择合适难度</p>
+                </div>
+                <div class="step">
+                    <div class="step-number">2</div>
+                    <h3>设置题目</h3>
+                    <p>自定义题目数量和运算类型</p>
+                </div>
+                <div class="step">
+                    <div class="step-number">3</div>
+                    <h3>开始练习</h3>
+                    <p>在线答题或打印纸质版</p>
+                </div>
+                <div class="step">
+                    <div class="step-number">4</div>
+                    <h3>查看结果</h3>
+                    <p>自动批改，即时反馈</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- 技术特点 -->
+        <section class="tech-stack">
+            <h2>技术特点</h2>
+            <div class="tech-icons">
+                <span title="HTML5">📄</span>
+                <span title="CSS3">🎨</span>
+                <span title="JavaScript">⚙️</span>
+                <span title="响应式设计">📱</span>
+                <span title="本地存储">💾</span>
+            </div>
+            <p style="margin-top: 20px; opacity: 0.9;">
+                基于现代Web技术开发，无需安装，打开即用
+            </p>
+        </section>
+
+        <!-- 页脚 -->
+        <footer>
+            <a href="app.html" class="cta-button" style="margin-bottom: 20px;">立即开始使用</a>
+            <p>© 2023 小学生口算题生成器 | 让数学学习变得更有趣</p>
+            <p style="margin-top: 10px; font-size: 0.9rem; opacity: 0.7;">
+                完全免费 · 开源项目 · 持续更新
+            </p>
+        </footer>
+    </div>
+
+    <script>
+        // 简单的动画效果
+        document.addEventListener('DOMContentLoaded', function() {
+            const features = document.querySelectorAll('.feature-card');
+            features.forEach((feature, index) => {
+                feature.style.animationDelay = (index * 0.1) + 's';
+                feature.style.animation = 'fadeInUp 0.6s ease forwards';
+            });
+        });
+
+        // 添加CSS动画
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes fadeInUp {
+                from {
+                    opacity: 0;
+                    transform: translateY(30px);
+                }
+                to {
+                    opacity: 1;
+                    transform: translateY(0);
+                }
+            }
+            
+            .feature-card {
+                opacity: 0;
+            }
+        `;
+        document.head.appendChild(style);
+    </script>
+</body>
+</html>
