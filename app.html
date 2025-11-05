@@ -641,8 +641,9 @@
                 problems.forEach(problem => {
                     const problemElement = document.createElement('div');
                     problemElement.className = 'problem-item';
+                    // 修改题号显示格式：从 "1." 改为 "(1)"
                     problemElement.innerHTML = `
-                        <span class="problem-text">${problem.index}. ${problem.text}</span>
+                        <span class="problem-text">(${problem.index}) ${problem.text}</span>
                         <input type="number" class="answer-input" data-index="${problem.index}" data-answer="${problem.answer}">
                     `;
                     this.elements.problemsGrid.appendChild(problemElement);
@@ -679,23 +680,26 @@
                     if (isNaN(userAnswer)) {
                         // 未填写答案
                         problemElement.classList.add('incorrect');
+                        // 修改题号显示格式：从 "1." 改为 "(1)"
                         problemElement.innerHTML = `
-                            <span class="problem-text">${input.dataset.index}. ${this.currentProblems[input.dataset.index-1].text}</span>
+                            <span class="problem-text">(${input.dataset.index}) ${this.currentProblems[input.dataset.index-1].text}</span>
                             <span class="incorrect">正确答案: ${correctAnswer}</span>
                         `;
                     } else if (userAnswer === correctAnswer) {
                         // 答案正确
                         correctCount++;
                         problemElement.classList.add('correct');
+                        // 修改题号显示格式：从 "1." 改为 "(1)"
                         problemElement.innerHTML = `
-                            <span class="problem-text">${input.dataset.index}. ${this.currentProblems[input.dataset.index-1].text}</span>
+                            <span class="problem-text">(${input.dataset.index}) ${this.currentProblems[input.dataset.index-1].text}</span>
                             <span class="correct">${userAnswer} ✓</span>
                         `;
                     } else {
                         // 答案错误
                         problemElement.classList.add('incorrect');
+                        // 修改题号显示格式：从 "1." 改为 "(1)"
                         problemElement.innerHTML = `
-                            <span class="problem-text">${input.dataset.index}. ${this.currentProblems[input.dataset.index-1].text}</span>
+                            <span class="problem-text">(${input.dataset.index}) ${this.currentProblems[input.dataset.index-1].text}</span>
                             <span class="incorrect">${userAnswer} ✗ 正确答案: ${correctAnswer}</span>
                         `;
                     }
