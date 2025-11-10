@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>小学生口算题生成器 - 答题批改版</title>
+    <title>小学生口算题生成器</title>
     <style>
         * {
             box-sizing: border-box;
@@ -155,6 +155,14 @@
             background: #e68900;
         }
 
+        #wrongProblemsBtn {
+            background: #9C27B0;
+        }
+
+        #wrongProblemsBtn:hover {
+            background: #7B1FA2;
+        }
+
         .problems-container {
             flex: 1;
             padding: 20px;
@@ -184,17 +192,15 @@
         }
 
         .answer-input {
-            width: 50px; /* 减小输入框宽度 */
-            padding: 5px 6px; /* 调整内边距 */
+            width: 50px;
+            padding: 5px 6px;
             border: 1px solid #ddd;
             border-radius: 4px;
             font-size: 16px;
             text-align: center;
-            /* 移除数字输入框的上下箭头 */
             -moz-appearance: textfield;
         }
 
-        /* 针对Webkit浏览器移除上下箭头 */
         .answer-input::-webkit-outer-spin-button,
         .answer-input::-webkit-inner-spin-button {
             -webkit-appearance: none;
@@ -233,6 +239,16 @@
             display: none;
         }
 
+        .wrong-problems-info {
+            text-align: center;
+            font-size: 14px;
+            margin: 10px 0;
+            padding: 8px;
+            background-color: #f3e5f5;
+            border-radius: 5px;
+            color: #7B1FA2;
+        }
+
         footer {
             text-align: center;
             margin-top: 30px;
@@ -268,7 +284,8 @@
                 border-bottom: 1px solid #ccc;
             }
             
-            .timer-display {
+            .timer-display,
+            .wrong-problems-info {
                 display: none !important;
             }
         }
@@ -357,10 +374,15 @@
             </div>
 
             <button id="generateBtn">生成口算题</button>
+            <button id="wrongProblemsBtn">错题集练习</button>
 
             <div class="button-group">
                 <button id="checkBtn">批改题目</button>
                 <button id="printBtn">打印题目</button>
+            </div>
+            
+            <div class="wrong-problems-info" id="wrongProblemsInfo" style="display: none;">
+                当前错题集共有 <span id="wrongProblemsCount">0</span> 道题目
             </div>
             
             <div class="timer-display" id="timerDisplay">
@@ -395,8 +417,86 @@
                 3: { maxNumber: [50, 100], operations: ['+', '-', '×', '÷'] }
             },
             defaultCount: 30,
-            maxAllowedCount: 30 // 添加最大允许题目数量
+            maxAllowedCount: 30
         };
+
+        // 错题集管理模块
+        class WrongProblemsManager {
+            constructor() {
+                this.wrongProblems = this.loadWrongProblems();
+                this.updateWrongProblemsInfo();
+            }
+
+            // 从本地存储加载错题集
+            loadWrongProblems() {
+                const saved = localStorage.getItem('math-wrong-problems');
+                return saved ? JSON.parse(saved) : [];
+            }
+
+            // 保存错题集到本地存储
+            saveWrongProblems() {
+                localStorage.setItem('math-wrong-problems', JSON.stringify(this.wrongProblems));
+                this.updateWrongProblemsInfo();
+            }
+
+            // 添加错题到错题集
+            addWrongProblem(problem) {
+                // 检查是否已存在相同题目
+                const exists = this.wrongProblems.some(wp => 
+                    wp.text === problem.text && wp.answer === problem.answer
+                );
+                
+                if (!exists) {
+                    this.wrongProblems.push({
+                        ...problem,
+                        addedTime: new Date().toISOString(),
+                        practiceCount: 0
+                    });
+                    this.saveWrongProblems();
+                }
+            }
+
+            // 从错题集获取题目
+            getWrongProblems(count) {
+                // 随机选择题目
+                const shuffled = [...this.wrongProblems].sort(() => 0.5 - Math.random());
+                const selected = shuffled.slice(0, Math.min(count, this.wrongProblems.length));
+                
+                // 更新练习次数
+                selected.forEach(problem => {
+                    problem.practiceCount = (problem.practiceCount || 0) + 1;
+                });
+                this.saveWrongProblems();
+                
+                return selected.map((problem, index) => ({
+                    ...problem,
+                    index: index + 1
+                }));
+            }
+
+            // 获取错题集数量
+            getWrongProblemsCount() {
+                return this.wrongProblems.length;
+            }
+
+            // 清空错题集
+            clearWrongProblems() {
+                this.wrongProblems = [];
+                this.saveWrongProblems();
+            }
+
+            // 更新错题集信息显示
+            updateWrongProblemsInfo() {
+                const infoElement = document.getElementById('wrongProblemsInfo');
+                const countElement = document.getElementById('wrongProblemsCount');
+                
+                if (infoElement && countElement) {
+                    const count = this.getWrongProblemsCount();
+                    countElement.textContent = count;
+                    infoElement.style.display = count > 0 ? 'block' : 'none';
+                }
+            }
+        }
 
         // 计时器模块
         class Timer {
@@ -409,7 +509,6 @@
                 this.timerContainer = document.getElementById('timerDisplay');
             }
             
-            // 开始计时
             start() {
                 if (this.isRunning) return;
                 
@@ -422,7 +521,6 @@
                 }, 1000);
             }
             
-            // 停止计时
             stop() {
                 if (!this.isRunning) return;
                 
@@ -431,7 +529,6 @@
                 clearInterval(this.intervalId);
             }
             
-            // 重置计时器
             reset() {
                 this.stop();
                 this.startTime = 0;
@@ -440,7 +537,6 @@
                 this.timerContainer.style.display = 'none';
             }
             
-            // 更新显示
             updateDisplay() {
                 const elapsed = Math.floor((Date.now() - this.startTime) / 1000);
                 const minutes = Math.floor(elapsed / 60).toString().padStart(2, '0');
@@ -448,7 +544,6 @@
                 this.timerDisplay.textContent = `${minutes}:${seconds}`;
             }
             
-            // 获取用时（秒）
             getElapsedTime() {
                 if (this.isRunning) {
                     return Math.floor((Date.now() - this.startTime) / 1000);
@@ -465,7 +560,6 @@
                 this.config = config;
             }
 
-            // 生成单个题目
             generateProblem(grade, maxNumber, operation) {
                 let num1, num2, problem, answer;
 
@@ -504,7 +598,6 @@
                 return { problem, answer };
             }
 
-            // 生成题目集
             generateProblemSet(grade, count, maxNumber, operations) {
                 const problems = [];
                 const answers = [];
@@ -540,6 +633,7 @@
                     generateBtn: document.getElementById('generateBtn'),
                     printBtn: document.getElementById('printBtn'),
                     checkBtn: document.getElementById('checkBtn'),
+                    wrongProblemsBtn: document.getElementById('wrongProblemsBtn'),
                     problemsGrid: document.getElementById('problemsGrid'),
                     scoreDisplay: document.getElementById('scoreDisplay'),
                     score: document.getElementById('score'),
@@ -548,45 +642,47 @@
                     subtractionCheckbox: document.getElementById('subtraction'),
                     multiplicationCheckbox: document.getElementById('multiplication'),
                     divisionCheckbox: document.getElementById('division'),
-                    timerCheckbox: document.getElementById('timerCheckbox')
+                    timerCheckbox: document.getElementById('timerCheckbox'),
+                    wrongProblemsInfo: document.getElementById('wrongProblemsInfo')
                 };
                 
                 this.currentProblems = [];
                 this.timer = new Timer();
+                this.wrongProblemsManager = new WrongProblemsManager();
+                this.isWrongProblemsMode = false;
             }
 
-            // 初始化UI
             initializeUI(config) {
                 this.setupEventListeners(config);
                 this.updateMaxNumberOptions(1, config);
             }
 
-            // 设置事件监听器
             setupEventListeners(config) {
-                // 年级变化事件
                 this.elements.gradeSelect.addEventListener('change', (e) => {
                     const grade = parseInt(e.target.value);
                     this.updateMaxNumberOptions(grade, config);
                     this.updateOperationOptions(grade);
                 });
 
-                // 生成题目事件
                 this.elements.generateBtn.addEventListener('click', () => {
+                    this.isWrongProblemsMode = false;
                     this.onGenerateProblems();
                 });
 
-                // 打印事件
+                this.elements.wrongProblemsBtn.addEventListener('click', () => {
+                    this.isWrongProblemsMode = true;
+                    this.onGenerateWrongProblems();
+                });
+
                 this.elements.printBtn.addEventListener('click', () => {
                     this.onPrint();
                 });
 
-                // 批改事件
                 this.elements.checkBtn.addEventListener('click', () => {
                     this.onCheckAnswers();
                 });
             }
 
-            // 更新最大数值范围选项
             updateMaxNumberOptions(grade, config) {
                 const maxNumberOptions = config.gradeOptions[grade].maxNumber;
                 this.elements.maxNumberSelect.innerHTML = '';
@@ -602,7 +698,6 @@
                 });
             }
 
-            // 更新运算类型选项
             updateOperationOptions(grade) {
                 const operations = Config.gradeOptions[grade].operations;
 
@@ -612,18 +707,16 @@
                 this.elements.divisionCheckbox.checked = operations.includes('÷');
             }
 
-            // 获取用户设置
             getUserSettings() {
                 const grade = parseInt(this.elements.gradeSelect.value);
                 let count = parseInt(this.elements.countInput.value);
                 const maxNumber = parseInt(this.elements.maxNumberSelect.value);
                 const enableTimer = this.elements.timerCheckbox.checked;
 
-                // 添加题目数量限制逻辑
                 if (count > Config.maxAllowedCount) {
                     count = Config.maxAllowedCount;
-                    this.elements.countInput.value = count; // 更新输入框显示
-                    this.showLimitMessage(); // 显示提示信息
+                    this.elements.countInput.value = count;
+                    this.showLimitMessage();
                 }
 
                 const operations = [];
@@ -632,7 +725,6 @@
                 if (this.elements.multiplicationCheckbox.checked) operations.push('×');
                 if (this.elements.divisionCheckbox.checked) operations.push('÷');
 
-                // 如果没有选择任何运算类型，使用默认值
                 if (operations.length === 0) {
                     operations.push('+', '-');
                 }
@@ -640,9 +732,7 @@
                 return { grade, count, maxNumber, operations, enableTimer };
             }
 
-            // 显示数量限制提示
             showLimitMessage() {
-                // 创建提示元素
                 let message = document.getElementById('countLimitMessage');
                 if (!message) {
                     message = document.createElement('div');
@@ -661,22 +751,28 @@
                 
                 message.textContent = `题目数量已自动调整为${Config.maxAllowedCount}题`;
                 
-                // 3秒后自动隐藏提示
                 setTimeout(() => {
                     message.style.display = 'none';
                 }, 3000);
             }
 
-            // 显示题目
-            displayProblems(problems) {
+            displayProblems(problems, isWrongProblems = false) {
                 this.currentProblems = problems;
                 this.elements.problemsGrid.innerHTML = '';
                 this.elements.scoreDisplay.style.display = 'none';
 
+                if (problems.length === 0) {
+                    this.elements.problemsGrid.innerHTML = `
+                        <p style="text-align: center; color: #666;">
+                            ${isWrongProblems ? '错题集为空，请先完成练习并批改题目' : '请生成题目开始练习'}
+                        </p>
+                    `;
+                    return;
+                }
+
                 problems.forEach(problem => {
                     const problemElement = document.createElement('div');
                     problemElement.className = 'problem-item';
-                    // 修改题号显示格式：从 "1." 改为 "(1)"
                     problemElement.innerHTML = `
                         <span class="problem-text">(${problem.index}) ${problem.text}</span>
                         <input type="number" class="answer-input" data-index="${problem.index}" data-answer="${problem.answer}">
@@ -684,11 +780,9 @@
                     this.elements.problemsGrid.appendChild(problemElement);
                 });
 
-                // 禁用输入框的鼠标滚轮控制
                 this.disableInputWheel();
             }
 
-            // 禁用输入框的鼠标滚轮控制
             disableInputWheel() {
                 const inputs = document.querySelectorAll('.answer-input');
                 inputs.forEach(input => {
@@ -698,7 +792,6 @@
                 });
             }
 
-            // 批改题目
             checkAnswers() {
                 const inputs = document.querySelectorAll('.answer-input');
                 let correctCount = 0;
@@ -708,39 +801,38 @@
                     const userAnswer = parseInt(input.value);
                     const correctAnswer = parseInt(input.dataset.answer);
                     const problemElement = input.parentElement;
+                    const problemIndex = parseInt(input.dataset.index) - 1;
                     
-                    // 移除之前的样式
                     problemElement.classList.remove('correct', 'incorrect');
                     
                     if (isNaN(userAnswer)) {
-                        // 未填写答案
                         problemElement.classList.add('incorrect');
-                        // 修改题号显示格式：从 "1." 改为 "(1)"
                         problemElement.innerHTML = `
-                            <span class="problem-text">(${input.dataset.index}) ${this.currentProblems[input.dataset.index-1].text}</span>
+                            <span class="problem-text">(${input.dataset.index}) ${this.currentProblems[problemIndex].text}</span>
                             <span class="incorrect">正确答案: ${correctAnswer}</span>
                         `;
+                        
+                        // 添加错题到错题集
+                        this.wrongProblemsManager.addWrongProblem(this.currentProblems[problemIndex]);
                     } else if (userAnswer === correctAnswer) {
-                        // 答案正确
                         correctCount++;
                         problemElement.classList.add('correct');
-                        // 修改题号显示格式：从 "1." 改为 "(1)"
                         problemElement.innerHTML = `
-                            <span class="problem-text">(${input.dataset.index}) ${this.currentProblems[input.dataset.index-1].text}</span>
+                            <span class="problem-text">(${input.dataset.index}) ${this.currentProblems[problemIndex].text}</span>
                             <span class="correct">${userAnswer} ✓</span>
                         `;
                     } else {
-                        // 答案错误
                         problemElement.classList.add('incorrect');
-                        // 修改题号显示格式：从 "1." 改为 "(1)"
                         problemElement.innerHTML = `
-                            <span class="problem-text">(${input.dataset.index}) ${this.currentProblems[input.dataset.index-1].text}</span>
+                            <span class="problem-text">(${input.dataset.index}) ${this.currentProblems[problemIndex].text}</span>
                             <span class="incorrect">${userAnswer} ✗ 正确答案: ${correctAnswer}</span>
                         `;
+                        
+                        // 添加错题到错题集
+                        this.wrongProblemsManager.addWrongProblem(this.currentProblems[problemIndex]);
                     }
                 });
 
-                // 显示分数
                 this.elements.score.textContent = correctCount;
                 this.elements.total.textContent = totalCount;
                 this.elements.scoreDisplay.style.display = 'block';
@@ -748,35 +840,35 @@
                 return { correct: correctCount, total: totalCount };
             }
 
-            // 生成题目回调
             onGenerateProblems() {
                 const settings = this.getUserSettings();
                 const event = new CustomEvent('generateProblems', { detail: settings });
                 document.dispatchEvent(event);
             }
 
-            // 打印回调
+            onGenerateWrongProblems() {
+                const settings = this.getUserSettings();
+                const event = new CustomEvent('generateWrongProblems', { detail: settings });
+                document.dispatchEvent(event);
+            }
+
             onPrint() {
                 window.print();
             }
 
-            // 批改回调
             onCheckAnswers() {
                 const event = new CustomEvent('checkAnswers');
                 document.dispatchEvent(event);
             }
             
-            // 开始计时
             startTimer() {
                 this.timer.start();
             }
             
-            // 停止计时
             stopTimer() {
                 this.timer.stop();
             }
             
-            // 重置计时器
             resetTimer() {
                 this.timer.reset();
             }
@@ -792,28 +884,26 @@
                 this.initializeApp();
             }
 
-            // 初始化应用
             initializeApp() {
                 this.uiController.initializeUI(this.config);
 
-                // 监听生成题目事件
                 document.addEventListener('generateProblems', (e) => {
                     this.handleGenerateProblems(e.detail);
                 });
 
-                // 监听批改题目事件
+                document.addEventListener('generateWrongProblems', (e) => {
+                    this.handleGenerateWrongProblems(e.detail);
+                });
+
                 document.addEventListener('checkAnswers', () => {
                     this.handleCheckAnswers();
                 });
 
-                // 初始生成一组题目
                 const initialSettings = this.uiController.getUserSettings();
                 this.handleGenerateProblems(initialSettings);
             }
 
-            // 处理生成题目
             handleGenerateProblems(settings) {
-                // 重置计时器
                 this.uiController.resetTimer();
                 
                 const { problems, answers } = this.problemGenerator.generateProblemSet(
@@ -825,16 +915,32 @@
 
                 this.uiController.displayProblems(problems);
                 
-                // 如果启用了计时功能，开始计时
                 if (settings.enableTimer) {
                     this.uiController.startTimer();
                 }
             }
 
-            // 处理批改题目
+            handleGenerateWrongProblems(settings) {
+                this.uiController.resetTimer();
+                
+                const wrongProblemsCount = this.uiController.wrongProblemsManager.getWrongProblemsCount();
+                let actualCount = settings.count;
+                
+                if (actualCount > wrongProblemsCount) {
+                    actualCount = wrongProblemsCount;
+                    this.uiController.elements.countInput.value = actualCount;
+                }
+                
+                const problems = this.uiController.wrongProblemsManager.getWrongProblems(actualCount);
+                this.uiController.displayProblems(problems, true);
+                
+                if (settings.enableTimer) {
+                    this.uiController.startTimer();
+                }
+            }
+
             handleCheckAnswers() {
                 this.uiController.checkAnswers();
-                // 停止计时
                 this.uiController.stopTimer();
             }
         }
