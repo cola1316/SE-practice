@@ -163,6 +163,14 @@
             background: #7B1FA2;
         }
 
+        #reviewProblemsBtn {
+            background: #FF5722;
+        }
+
+        #reviewProblemsBtn:hover {
+            background: #E64A19;
+        }
+
         .problems-container {
             flex: 1;
             padding: 20px;
@@ -249,6 +257,16 @@
             color: #7B1FA2;
         }
 
+        .review-problems-info {
+            text-align: center;
+            font-size: 14px;
+            margin: 10px 0;
+            padding: 8px;
+            background-color: #e3f2fd;
+            border-radius: 5px;
+            color: #1565C0;
+        }
+
         footer {
             text-align: center;
             margin-top: 30px;
@@ -285,7 +303,8 @@
             }
             
             .timer-display,
-            .wrong-problems-info {
+            .wrong-problems-info,
+            .review-problems-info {
                 display: none !important;
             }
         }
@@ -375,6 +394,7 @@
 
             <button id="generateBtn">生成口算题</button>
             <button id="wrongProblemsBtn">错题集练习</button>
+            <button id="reviewProblemsBtn">复习题集练习</button>
 
             <div class="button-group">
                 <button id="checkBtn">批改题目</button>
@@ -383,6 +403,10 @@
             
             <div class="wrong-problems-info" id="wrongProblemsInfo" style="display: none;">
                 当前错题集共有 <span id="wrongProblemsCount">0</span> 道题目
+            </div>
+            
+            <div class="review-problems-info" id="reviewProblemsInfo" style="display: none;">
+                当前复习题集共有 <span id="reviewProblemsCount">0</span> 道题目
             </div>
             
             <div class="timer-display" id="timerDisplay">
@@ -417,7 +441,8 @@
                 3: { maxNumber: [50, 100], operations: ['+', '-', '×', '÷'] }
             },
             defaultCount: 30,
-            maxAllowedCount: 30
+            maxAllowedCount: 30,
+            reviewProblemsRatio: 0.3 // 30%的题目标记为重点题目
         };
 
         // 错题集管理模块
@@ -427,21 +452,17 @@
                 this.updateWrongProblemsInfo();
             }
 
-            // 从本地存储加载错题集
             loadWrongProblems() {
                 const saved = localStorage.getItem('math-wrong-problems');
                 return saved ? JSON.parse(saved) : [];
             }
 
-            // 保存错题集到本地存储
             saveWrongProblems() {
                 localStorage.setItem('math-wrong-problems', JSON.stringify(this.wrongProblems));
                 this.updateWrongProblemsInfo();
             }
 
-            // 添加错题到错题集
             addWrongProblem(problem) {
-                // 检查是否已存在相同题目
                 const exists = this.wrongProblems.some(wp => 
                     wp.text === problem.text && wp.answer === problem.answer
                 );
@@ -456,13 +477,10 @@
                 }
             }
 
-            // 从错题集获取题目
             getWrongProblems(count) {
-                // 随机选择题目
                 const shuffled = [...this.wrongProblems].sort(() => 0.5 - Math.random());
                 const selected = shuffled.slice(0, Math.min(count, this.wrongProblems.length));
                 
-                // 更新练习次数
                 selected.forEach(problem => {
                     problem.practiceCount = (problem.practiceCount || 0) + 1;
                 });
@@ -474,24 +492,90 @@
                 }));
             }
 
-            // 获取错题集数量
             getWrongProblemsCount() {
                 return this.wrongProblems.length;
             }
 
-            // 清空错题集
             clearWrongProblems() {
                 this.wrongProblems = [];
                 this.saveWrongProblems();
             }
 
-            // 更新错题集信息显示
             updateWrongProblemsInfo() {
                 const infoElement = document.getElementById('wrongProblemsInfo');
                 const countElement = document.getElementById('wrongProblemsCount');
                 
                 if (infoElement && countElement) {
                     const count = this.getWrongProblemsCount();
+                    countElement.textContent = count;
+                    infoElement.style.display = count > 0 ? 'block' : 'none';
+                }
+            }
+        }
+
+        // 复习题集管理模块
+        class ReviewProblemsManager {
+            constructor() {
+                this.reviewProblems = this.loadReviewProblems();
+                this.updateReviewProblemsInfo();
+            }
+
+            loadReviewProblems() {
+                const saved = localStorage.getItem('math-review-problems');
+                return saved ? JSON.parse(saved) : [];
+            }
+
+            saveReviewProblems() {
+                localStorage.setItem('math-review-problems', JSON.stringify(this.reviewProblems));
+                this.updateReviewProblemsInfo();
+            }
+
+            addReviewProblem(problem) {
+                const exists = this.reviewProblems.some(rp => 
+                    rp.text === problem.text && rp.answer === problem.answer
+                );
+                
+                if (!exists) {
+                    this.reviewProblems.push({
+                        ...problem,
+                        addedTime: new Date().toISOString(),
+                        practiceCount: 0,
+                        isImportant: true
+                    });
+                    this.saveReviewProblems();
+                }
+            }
+
+            getReviewProblems(count) {
+                const shuffled = [...this.reviewProblems].sort(() => 0.5 - Math.random());
+                const selected = shuffled.slice(0, Math.min(count, this.reviewProblems.length));
+                
+                selected.forEach(problem => {
+                    problem.practiceCount = (problem.practiceCount || 0) + 1;
+                });
+                this.saveReviewProblems();
+                
+                return selected.map((problem, index) => ({
+                    ...problem,
+                    index: index + 1
+                }));
+            }
+
+            getReviewProblemsCount() {
+                return this.reviewProblems.length;
+            }
+
+            clearReviewProblems() {
+                this.reviewProblems = [];
+                this.saveReviewProblems();
+            }
+
+            updateReviewProblemsInfo() {
+                const infoElement = document.getElementById('reviewProblemsInfo');
+                const countElement = document.getElementById('reviewProblemsCount');
+                
+                if (infoElement && countElement) {
+                    const count = this.getReviewProblemsCount();
                     countElement.textContent = count;
                     infoElement.style.display = count > 0 ? 'block' : 'none';
                 }
@@ -601,25 +685,36 @@
             generateProblemSet(grade, count, maxNumber, operations) {
                 const problems = [];
                 const answers = [];
+                const importantProblems = []; // 存储重点题目
 
                 for (let i = 0; i < count; i++) {
                     const operation = operations[Math.floor(Math.random() * operations.length)];
                     const { problem, answer } = this.generateProblem(grade, maxNumber, operation);
 
-                    problems.push({
+                    const problemData = {
                         index: i + 1,
                         text: problem,
                         answer: answer
-                    });
+                    };
 
+                    problems.push(problemData);
                     answers.push({
                         index: i + 1,
                         text: problem,
                         answer: answer
                     });
+
+                    // 随机标记一部分题目为重点题目（不显示给用户）
+                    if (Math.random() < this.config.reviewProblemsRatio) {
+                        importantProblems.push(problemData);
+                    }
                 }
 
-                return { problems, answers };
+                return { 
+                    problems, 
+                    answers,
+                    importantProblems // 返回重点题目列表
+                };
             }
         }
 
@@ -634,6 +729,7 @@
                     printBtn: document.getElementById('printBtn'),
                     checkBtn: document.getElementById('checkBtn'),
                     wrongProblemsBtn: document.getElementById('wrongProblemsBtn'),
+                    reviewProblemsBtn: document.getElementById('reviewProblemsBtn'),
                     problemsGrid: document.getElementById('problemsGrid'),
                     scoreDisplay: document.getElementById('scoreDisplay'),
                     score: document.getElementById('score'),
@@ -643,13 +739,17 @@
                     multiplicationCheckbox: document.getElementById('multiplication'),
                     divisionCheckbox: document.getElementById('division'),
                     timerCheckbox: document.getElementById('timerCheckbox'),
-                    wrongProblemsInfo: document.getElementById('wrongProblemsInfo')
+                    wrongProblemsInfo: document.getElementById('wrongProblemsInfo'),
+                    reviewProblemsInfo: document.getElementById('reviewProblemsInfo')
                 };
                 
                 this.currentProblems = [];
+                this.currentImportantProblems = []; // 当前生成的重点题目
                 this.timer = new Timer();
                 this.wrongProblemsManager = new WrongProblemsManager();
+                this.reviewProblemsManager = new ReviewProblemsManager();
                 this.isWrongProblemsMode = false;
+                this.isReviewProblemsMode = false;
             }
 
             initializeUI(config) {
@@ -666,12 +766,20 @@
 
                 this.elements.generateBtn.addEventListener('click', () => {
                     this.isWrongProblemsMode = false;
+                    this.isReviewProblemsMode = false;
                     this.onGenerateProblems();
                 });
 
                 this.elements.wrongProblemsBtn.addEventListener('click', () => {
                     this.isWrongProblemsMode = true;
+                    this.isReviewProblemsMode = false;
                     this.onGenerateWrongProblems();
+                });
+
+                this.elements.reviewProblemsBtn.addEventListener('click', () => {
+                    this.isWrongProblemsMode = false;
+                    this.isReviewProblemsMode = true;
+                    this.onGenerateReviewProblems();
                 });
 
                 this.elements.printBtn.addEventListener('click', () => {
@@ -756,16 +864,18 @@
                 }, 3000);
             }
 
-            displayProblems(problems, isWrongProblems = false) {
+            displayProblems(problems, isWrongProblems = false, isReviewProblems = false) {
                 this.currentProblems = problems;
                 this.elements.problemsGrid.innerHTML = '';
                 this.elements.scoreDisplay.style.display = 'none';
 
                 if (problems.length === 0) {
+                    let message = '请生成题目开始练习';
+                    if (isWrongProblems) message = '错题集为空，请先完成练习并批改题目';
+                    if (isReviewProblems) message = '复习题集为空，请先完成练习并批改题目';
+                    
                     this.elements.problemsGrid.innerHTML = `
-                        <p style="text-align: center; color: #666;">
-                            ${isWrongProblems ? '错题集为空，请先完成练习并批改题目' : '请生成题目开始练习'}
-                        </p>
+                        <p style="text-align: center; color: #666;">${message}</p>
                     `;
                     return;
                 }
@@ -833,6 +943,14 @@
                     }
                 });
 
+                // 将当前的重点题目添加到复习题集
+                if (this.currentImportantProblems.length > 0) {
+                    this.currentImportantProblems.forEach(problem => {
+                        this.reviewProblemsManager.addReviewProblem(problem);
+                    });
+                    this.currentImportantProblems = []; // 清空当前重点题目
+                }
+
                 this.elements.score.textContent = correctCount;
                 this.elements.total.textContent = totalCount;
                 this.elements.scoreDisplay.style.display = 'block';
@@ -849,6 +967,12 @@
             onGenerateWrongProblems() {
                 const settings = this.getUserSettings();
                 const event = new CustomEvent('generateWrongProblems', { detail: settings });
+                document.dispatchEvent(event);
+            }
+
+            onGenerateReviewProblems() {
+                const settings = this.getUserSettings();
+                const event = new CustomEvent('generateReviewProblems', { detail: settings });
                 document.dispatchEvent(event);
             }
 
@@ -895,6 +1019,10 @@
                     this.handleGenerateWrongProblems(e.detail);
                 });
 
+                document.addEventListener('generateReviewProblems', (e) => {
+                    this.handleGenerateReviewProblems(e.detail);
+                });
+
                 document.addEventListener('checkAnswers', () => {
                     this.handleCheckAnswers();
                 });
@@ -906,13 +1034,14 @@
             handleGenerateProblems(settings) {
                 this.uiController.resetTimer();
                 
-                const { problems, answers } = this.problemGenerator.generateProblemSet(
+                const { problems, answers, importantProblems } = this.problemGenerator.generateProblemSet(
                     settings.grade,
                     settings.count,
                     settings.maxNumber,
                     settings.operations
                 );
 
+                this.uiController.currentImportantProblems = importantProblems; // 保存重点题目
                 this.uiController.displayProblems(problems);
                 
                 if (settings.enableTimer) {
@@ -932,7 +1061,26 @@
                 }
                 
                 const problems = this.uiController.wrongProblemsManager.getWrongProblems(actualCount);
-                this.uiController.displayProblems(problems, true);
+                this.uiController.displayProblems(problems, true, false);
+                
+                if (settings.enableTimer) {
+                    this.uiController.startTimer();
+                }
+            }
+
+            handleGenerateReviewProblems(settings) {
+                this.uiController.resetTimer();
+                
+                const reviewProblemsCount = this.uiController.reviewProblemsManager.getReviewProblemsCount();
+                let actualCount = settings.count;
+                
+                if (actualCount > reviewProblemsCount) {
+                    actualCount = reviewProblemsCount;
+                    this.uiController.elements.countInput.value = actualCount;
+                }
+                
+                const problems = this.uiController.reviewProblemsManager.getReviewProblems(actualCount);
+                this.uiController.displayProblems(problems, false, true);
                 
                 if (settings.enableTimer) {
                     this.uiController.startTimer();
